@@ -1,14 +1,14 @@
 # Cold Hard Truth Bro
 
-An AI coach panel: local RAG over YouTube transcripts of relationship and life coaches. Ask a question
+An AI coach panel: local RAG over a corpus of relationship and life-coaching transcripts. Ask a question
 (or send a screenshot of a chat or profile) and get one answer built from many coaches' principles, next to
 a plain "mainstream" answer for comparison. Everything except the final answer runs locally and free.
 
 ## Architecture
-yt-dlp (subtitles only) -> Ollama qwen2.5:14b extraction -> nomic-embed-text + SQLite index -> Claude answers.
+transcripts (bring your own; ingestion lives in the private repo) -> Ollama qwen2.5:14b extraction -> nomic-embed-text + SQLite index -> Claude answers.
 
 ```
-collect.py  ->  data/transcripts/<creator>/<id>.json      (subtitles only, gitignored)
+data/transcripts/<creator>/<id>.json                     (input: {video_id,title,url,segments:[{t,text}]}, gitignored)
 extract.py  ->  <kb>/<creator>/<id>.jsonl                 (Ollama, qwen2.5:14b, JSON mode)
 index.py    ->  <kb>/index.sqlite                         (nomic-embed-text, float32 BLOB)
 ask.py      ->  compact JSON of the best principles       (numpy cosine, filters, per-creator cap)
@@ -43,7 +43,7 @@ Requires Python 3, numpy, and Ollama with `qwen2.5:14b` and `nomic-embed-text` p
 cp scripts/public-guard.sh .git/hooks/pre-push
 python3 index.py                       # embed the demo principles in examples/kb
 python3 ask.py "how short should my texts be" --k 5
-python3 collect.py <slug>              # slug must exist in creators.json
+# put transcript JSON files in data/transcripts/<slug>/ (format above), then:
 python3 extract.py <slug> --top 25     # resumable; --rest 25 for the others
 python3 index.py && python3 ask.py "query" --topic texting --debug
 ```
